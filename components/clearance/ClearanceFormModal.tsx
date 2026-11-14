@@ -60,8 +60,8 @@ export function ClearanceFormModal({
     setValue,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(clearanceSchema),
+  } = useForm<FormValues, unknown, FormValues>({
+    resolver: zodResolver(clearanceSchema) as any,
     defaultValues: initialData
       ? {
           productName: initialData.productName,

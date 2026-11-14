@@ -110,8 +110,8 @@ export function UpdateComposer({
     setValue,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(updateSchema),
+  } = useForm<FormValues, any, FormValues>({
+    resolver: zodResolver(updateSchema) as any,
     defaultValues: {
       type: initialData?.type || 'new_product',
       title: initialData?.title || '',
