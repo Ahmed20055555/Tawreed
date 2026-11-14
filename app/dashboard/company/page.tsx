@@ -34,7 +34,11 @@ import {
   Send,
   Truck,
   AlertCircle,
+  Flame,
+  Radar,
+  Megaphone,
 } from 'lucide-react';
+import { getClients } from '@/lib/mock-api';
 
 interface CompanyData {
   companyName: string;
@@ -1508,6 +1512,78 @@ export default function CompanyDashboardPage() {
                 </button>
               );
             })}
+
+            {/* New Features: سوق التصفية & رادار المحلات */}
+            <div className="pt-2 border-t border-slate-100 mt-2 space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 px-3 uppercase tracking-wider block mb-1">
+                خدمات حصرية
+              </span>
+
+              {/* عملائي */}
+              <Link
+                href="/supplier/clients"
+                onClick={() => setIsSidebarOpen(false)}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Users className="h-4 w-4 text-purple-600" />
+                  <span>عملائي</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-purple-100 text-purple-700">
+                    جديد
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700">
+                    {typeof window !== 'undefined' ? getClients().length : 12}
+                  </span>
+                </div>
+              </Link>
+
+              {/* النشر للعملاء */}
+              <Link
+                href="/supplier/updates"
+                onClick={() => setIsSidebarOpen(false)}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Megaphone className="h-4 w-4 text-purple-600" />
+                  <span>النشر للعملاء</span>
+                </div>
+                <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-purple-100 text-purple-700">
+                  جديد
+                </span>
+              </Link>
+
+              {/* سوق التصفية */}
+              <Link
+                href="/supplier/clearance"
+                onClick={() => setIsSidebarOpen(false)}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Flame className="h-4 w-4 text-purple-600" />
+                  <span>سوق التصفية</span>
+                </div>
+                <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-purple-100 text-purple-700">
+                  جديد
+                </span>
+              </Link>
+
+              {/* رادار المحلات */}
+              <Link
+                href="/supplier/radar"
+                onClick={() => setIsSidebarOpen(false)}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Radar className="h-4 w-4 text-purple-600" />
+                  <span>رادار المحلات</span>
+                </div>
+                <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-purple-100 text-purple-700">
+                  جديد
+                </span>
+              </Link>
+            </div>
           </nav>
         </div>
 
