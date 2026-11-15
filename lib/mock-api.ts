@@ -388,3 +388,189 @@ export const getAdminMerchants = (): AdminMerchant[] => adminMerchantsList;
 export const getAdminComplaints = (): AdminComplaint[] => adminComplaints;
 export const getAdminSettings = (): PlatformSettings => adminSettings;
 export const getAdminSalesTeam = (): SalesMember[] => adminSalesTeam;
+
+
+// ==========================================
+// 10. Merchant Side (Frontend Only)
+// ==========================================
+import {
+  Supplier,
+  SupplierProduct,
+  FeedUpdate,
+  MerchantProfile,
+  MerchantOrder,
+} from '@/types/merchant';
+import {
+  INITIAL_MERCHANT_PROFILE,
+  INITIAL_SUPPLIERS,
+  INITIAL_PRODUCTS,
+  INITIAL_FEED_UPDATES,
+  INITIAL_ORDERS,
+} from '@/data/merchant-mock';
+
+// TODO(backend): replace with real API call (GET /api/merchant/suppliers)
+export function getSuppliers(): Supplier[] {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('tawreed_merchant_suppliers');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse merchant suppliers from localStorage', e);
+      }
+    }
+  }
+  return INITIAL_SUPPLIERS;
+}
+
+// TODO(backend): replace with real API call (GET /api/merchant/suppliers/linked)
+export function getLinkedSuppliers(): Supplier[] {
+  const all = getSuppliers();
+  return all.filter((s) => s.isLinked);
+}
+
+// TODO(backend): replace with real API call (GET /api/merchant/suppliers/:id)
+export function getSupplierById(idOrSlug: string): Supplier | undefined {
+  const all = getSuppliers();
+  return all.find((s) => s.id === idOrSlug || s.slug === idOrSlug);
+}
+
+// TODO(backend): replace with real API call (GET /api/merchant/suppliers/:id/products)
+export function getSupplierProducts(supplierId: string): SupplierProduct[] {
+  return INITIAL_PRODUCTS.filter((p) => p.supplierId === supplierId);
+}
+
+// TODO(backend): replace with real API call (GET /api/merchant/feed)
+export function getFeed(): FeedUpdate[] {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('tawreed_merchant_feed');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse merchant feed from localStorage', e);
+      }
+    }
+  }
+  return INITIAL_FEED_UPDATES;
+}
+
+// TODO(backend): replace with real API call (POST /api/merchant/suppliers/:id/link)
+export function linkSupplier(supplierId: string, currentSuppliers?: Supplier[]): Supplier[] {
+  const list = currentSuppliers || getSuppliers();
+  const updated = list.map((s) =>
+    s.id === supplierId || s.slug === supplierId
+      ? {
+          ...s,
+          isLinked: true,
+          linkedAt: new Date().toISOString().split('T')[0],
+          linkedMerchantsCount: s.linkedMerchantsCount + 1,
+        }
+      : s
+  );
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('tawreed_merchant_suppliers', JSON.stringify(updated));
+  }
+  console.log('[MockAPI] Linked supplier locally:', supplierId);
+  return updated;
+}
+
+// TODO(backend): replace with real API call (DELETE /api/merchant/suppliers/:id/link)
+export function unlinkSupplier(supplierId: string, currentSuppliers?: Supplier[]): Supplier[] {
+  const list = currentSuppliers || getSuppliers();
+  const updated = list.map((s) =>
+    s.id === supplierId || s.slug === supplierId
+      ? {
+          ...s,
+          isLinked: false,
+          linkedAt: undefined,
+          linkedMerchantsCount: Math.max(0, s.linkedMerchantsCount - 1),
+        }
+      : s
+  );
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('tawreed_merchant_suppliers', JSON.stringify(updated));
+  }
+  console.log('[MockAPI] Unlinked supplier locally:', supplierId);
+  return updated;
+}
+
+// TODO(backend): replace with real API call (PUT /api/merchant/feed/:id/read)
+export function markUpdateAsRead(updateId: string, currentFeed?: FeedUpdate[]): FeedUpdate[] {
+  const list = currentFeed || getFeed();
+  const updated = list.map((u) => (u.id === updateId ? { ...u, isRead: true } : u));
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('tawreed_merchant_feed', JSON.stringify(updated));
+  }
+  return updated;
+}
+
+// TODO(backend): replace with real API call (PUT /api/merchant/feed/read-all)
+export function markAllUpdatesAsRead(currentFeed?: FeedUpdate[]): FeedUpdate[] {
+  const list = currentFeed || getFeed();
+  const updated = list.map((u) => ({ ...u, isRead: true }));
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('tawreed_merchant_feed', JSON.stringify(updated));
+  }
+  return updated;
+}
+
+// TODO(backend): replace with real API call (GET /api/merchant/orders)
+export function getMerchantOrders(): MerchantOrder[] {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('tawreed_merchant_orders');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse merchant orders from localStorage', e);
+      }
+    }
+  }
+  return INITIAL_ORDERS;
+}
+
+// TODO(backend): replace with real API call (POST /api/merchant/orders)
+export function placeMerchantOrder(
+  order: Omit<MerchantOrder, 'id' | 'orderNumber' | 'date'>,
+  currentOrders?: MerchantOrder[]
+): MerchantOrder {
+  const existing = currentOrders || getMerchantOrders();
+  const newOrder: MerchantOrder = {
+    ...order,
+    id: 'ord-' + Date.now(),
+    orderNumber: `TWR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    date: new Date().toISOString().split('T')[0],
+  };
+
+  const updated = [newOrder, ...existing];
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('tawreed_merchant_orders', JSON.stringify(updated));
+  }
+  console.log('[MockAPI] Placed merchant order locally:', newOrder);
+  return newOrder;
+}
+
+// TODO(backend): replace with real API call (GET /api/merchant/profile)
+export function getMerchantProfile(): MerchantProfile {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('tawreed_merchant_profile');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse merchant profile from localStorage', e);
+      }
+    }
+  }
+  return INITIAL_MERCHANT_PROFILE;
+}
+
+// TODO(backend): replace with real API call (PUT /api/merchant/profile)
+export function saveMerchantProfile(profile: MerchantProfile): MerchantProfile {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('tawreed_merchant_profile', JSON.stringify(profile));
+  }
+  console.log('[MockAPI] Saved merchant profile locally:', profile);
+  return profile;
+}
