@@ -15,6 +15,9 @@ import {
   ChevronLeft,
   X,
   Flame,
+  TrendingDown,
+  Zap,
+  Award,
 } from 'lucide-react';
 import { useMerchant } from '@/context/MerchantContext';
 
@@ -28,7 +31,7 @@ export function SidebarNav({ isOpen, onClose, isMobileDrawer = false }: SidebarN
   const pathname = usePathname();
   const { profile, linkedSuppliers, cartCount, stats } = useMerchant();
 
-  const navItems = [
+  const mainFeatures = [
     {
       label: 'الرئيسية',
       href: '/merchant',
@@ -37,6 +40,41 @@ export function SidebarNav({ isOpen, onClose, isMobileDrawer = false }: SidebarN
       badge: stats.unreadUpdatesCount > 0 ? stats.unreadUpdatesCount : undefined,
       badgeColor: 'bg-rose-500 text-white',
     },
+    {
+      label: 'بورصة الأسعار',
+      href: '/merchant/market-prices',
+      icon: TrendingDown,
+      exact: true,
+      badge: 'مؤشر',
+      badgeColor: 'bg-emerald-100 text-emerald-800',
+    },
+    {
+      label: 'النواقص السريعة',
+      href: '/merchant/smart-restock',
+      icon: Zap,
+      exact: true,
+      badge: 'وفّر وقت',
+      badgeColor: 'bg-amber-100 text-amber-800',
+    },
+    {
+      label: 'سوق التصفية',
+      href: '/merchant/clearance',
+      icon: Flame,
+      exact: true,
+      badge: 'خصومات',
+      badgeColor: 'bg-purple-100 text-purple-700',
+    },
+    {
+      label: 'المحفظة والمكافآت',
+      href: '/merchant/rewards',
+      icon: Award,
+      exact: true,
+      badge: 'VIP',
+      badgeColor: 'bg-amber-100 text-amber-800 font-black',
+    },
+  ];
+
+  const managementItems = [
     {
       label: 'الشركات',
       href: '/merchant/suppliers',
@@ -68,14 +106,6 @@ export function SidebarNav({ isOpen, onClose, isMobileDrawer = false }: SidebarN
       counterColor: 'bg-amber-100 text-amber-800',
     },
     {
-      label: 'سوق التصفية',
-      href: '/merchant/clearance',
-      icon: Flame,
-      exact: true,
-      badge: 'جديد',
-      badgeColor: 'bg-purple-100 text-purple-700',
-    },
-    {
       label: 'تعديل الحساب',
       href: '/merchant/settings',
       icon: Settings,
@@ -83,11 +113,11 @@ export function SidebarNav({ isOpen, onClose, isMobileDrawer = false }: SidebarN
     },
   ];
 
-  const isActive = (item: (typeof navItems)[0]) => {
-    if (item.exact) {
-      return pathname === item.href;
+  const isActive = (href: string, exact: boolean) => {
+    if (exact) {
+      return pathname === href;
     }
-    return pathname.startsWith(item.href);
+    return pathname.startsWith(href);
   };
 
   const content = (
@@ -109,40 +139,55 @@ export function SidebarNav({ isOpen, onClose, isMobileDrawer = false }: SidebarN
           )}
 
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0f2d4a] text-white font-black text-base shadow-xs">
-              {profile.avatar || profile.storeName.charAt(0) || 'ت'}
+            <div
+              suppressHydrationWarning
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0f2d4a] text-white font-black text-base shadow-xs"
+            >
+              {profile?.avatar || profile?.storeName?.charAt(0) || 'ت'}
             </div>
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <h2 className="text-xs sm:text-sm font-black text-gray-900 truncate">
-                  {profile.storeName}
+                <h2
+                  suppressHydrationWarning
+                  className="text-xs sm:text-sm font-black text-gray-900 truncate"
+                >
+                  {profile?.storeName || 'سوبر ماركت'}
                 </h2>
               </div>
 
-              <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5 truncate">
+              <div
+                suppressHydrationWarning
+                className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5 truncate"
+              >
                 <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                <span className="truncate">{profile.area}، {profile.governorate}</span>
+                <span className="truncate">{profile?.area || 'شبين'}، {profile?.governorate || 'الإسماعيلية'}</span>
               </div>
 
-              <div className="mt-1">
-                <span className="inline-block rounded-md bg-purple-50 px-1.5 py-0.2 text-[9px] font-bold text-purple-700">
-                  {profile.storeType}
+              <div className="mt-1 flex items-center gap-1.5">
+                <span
+                  suppressHydrationWarning
+                  className="inline-block rounded-md bg-purple-50 px-1.5 py-0.2 text-[9px] font-bold text-purple-700"
+                >
+                  {profile?.storeType || 'سوبر ماركت'}
+                </span>
+                <span className="inline-block rounded-md bg-amber-50 px-1.5 py-0.2 text-[9px] font-bold text-amber-700">
+                  تاجر VIP 🌟
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Navigation list */}
+        {/* Section 1: Main Smart Features */}
         <nav className="p-3 space-y-1">
           <span className="text-[10px] font-bold text-slate-400 px-3 uppercase tracking-wider block mb-1">
-            القائمة الرئيسية
+            خدمات السوبر ماركت الذكية
           </span>
 
-          {navItems.map((item) => {
+          {mainFeatures.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item);
+            const active = isActive(item.href, item.exact);
 
             return (
               <Link
@@ -174,21 +219,61 @@ export function SidebarNav({ isOpen, onClose, isMobileDrawer = false }: SidebarN
                       {item.badge}
                     </span>
                   )}
-
-                  {item.counter !== undefined && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        active ? 'bg-white/20 text-white' : item.counterColor
-                      }`}
-                    >
-                      {item.counter}
-                    </span>
-                  )}
                 </div>
               </Link>
             );
           })}
         </nav>
+
+        {/* Section 2: Management & Orders */}
+        <div className="px-3 pt-2">
+          <div className="border-t border-slate-100 pt-3">
+            <span className="text-[10px] font-bold text-slate-400 px-3 uppercase tracking-wider block mb-1">
+              إدارة التوريد والطلبات
+            </span>
+
+            <div className="space-y-1">
+              {managementItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href, item.exact);
+
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={onClose}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      active
+                        ? 'bg-[#0f2d4a] text-white shadow-xs'
+                        : 'text-slate-700 hover:bg-slate-50 hover:text-[#0f2d4a]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon
+                        className={`h-4 w-4 ${
+                          active ? 'text-white' : 'text-slate-400 group-hover:text-[#0f2d4a]'
+                        }`}
+                      />
+                      <span>{item.label}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {item.counter !== undefined && (
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            active ? 'bg-white/20 text-white' : item.counterColor
+                          }`}
+                        >
+                          {item.counter}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Footer Info */}
@@ -240,17 +325,16 @@ export function MobileBottomBar() {
       badge: stats.unreadUpdatesCount > 0 ? stats.unreadUpdatesCount : undefined,
     },
     {
-      label: 'الشركات',
-      href: '/merchant/suppliers',
-      icon: Building2,
-      exact: false,
+      label: 'بورصة الأسعار',
+      href: '/merchant/market-prices',
+      icon: TrendingDown,
+      exact: true,
     },
     {
-      label: 'شركاتي',
-      href: '/merchant/my-suppliers',
-      icon: Link2,
+      label: 'النواقص',
+      href: '/merchant/smart-restock',
+      icon: Zap,
       exact: true,
-      badge: linkedSuppliers.length > 0 ? linkedSuppliers.length : undefined,
     },
     {
       label: 'السلة',
@@ -260,11 +344,10 @@ export function MobileBottomBar() {
       badge: cartCount > 0 ? cartCount : undefined,
     },
     {
-      label: 'طلباتي',
-      href: '/merchant/orders',
-      icon: Package,
+      label: 'المكافآت',
+      href: '/merchant/rewards',
+      icon: Award,
       exact: true,
-      badge: stats.pendingOrdersCount > 0 ? stats.pendingOrdersCount : undefined,
     },
   ];
 

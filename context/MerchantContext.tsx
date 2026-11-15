@@ -36,7 +36,7 @@ interface MerchantContextType {
   markAllRead: () => void;
   unreadCount: number;
   cart: CartItem[];
-  addToCart: (product: SupplierProduct, supplier: Supplier, quantity?: number) => void;
+  addToCart: (product: SupplierProduct, supplier?: Supplier | number, quantity?: number) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCartForSupplier: (supplierId: string) => void;
@@ -141,8 +141,35 @@ export function MerchantProvider({ children }: { children: ReactNode }) {
   }, [feed, linkedSuppliers]);
 
   // Cart
-  const addToCart = (product: SupplierProduct, supplier: Supplier, quantity = 1) => {
-    const qtyToAdd = Math.max(product.minOrder, quantity);
+  const addToCart = (
+    product: SupplierProduct,
+    supplierOrQty?: Supplier | number,
+    maybeQuantity?: number
+  ) => {
+    let supplier: { id: string; name: string };
+    let quantity = 1;
+
+    if (typeof supplierOrQty === 'number') {
+      quantity = supplierOrQty;
+      const matched = suppliers.find((s) => s.id === product.supplierId);
+      supplier = matched || {
+        id: product.supplierId || 'sup-1',
+        name: (product as any).supplierName || 'شركة توريد',
+      };
+    } else if (supplierOrQty && typeof supplierOrQty === 'object') {
+      supplier = supplierOrQty;
+      quantity = typeof maybeQuantity === 'number' ? maybeQuantity : 1;
+    } else {
+      const matched = suppliers.find((s) => s.id === product.supplierId);
+      supplier = matched || {
+        id: product.supplierId || 'sup-1',
+        name: (product as any).supplierName || 'شركة توريد',
+      };
+      quantity = typeof maybeQuantity === 'number' ? maybeQuantity : 1;
+    }
+
+    const minOrderVal = product.minOrder || 1;
+    const qtyToAdd = Math.max(minOrderVal, quantity);
     const existingIndex = cart.findIndex((item) => item.productId === product.id);
 
     let updatedCart: CartItem[];
@@ -160,7 +187,7 @@ export function MerchantProvider({ children }: { children: ReactNode }) {
           unit: product.unit,
           price: product.price,
           quantity: qtyToAdd,
-          minOrder: product.minOrder,
+          minOrder: minOrderVal,
         },
       ];
     }
