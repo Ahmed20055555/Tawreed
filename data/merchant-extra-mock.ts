@@ -3,6 +3,8 @@ import {
   RestockPreset,
   CouponItem,
   WalletTransaction,
+  DeliveryRoute,
+  PricingPreset,
 } from '@/types/merchant-extra';
 
 export const COMMODITY_PRICES: CommodityPrice[] = [
@@ -365,7 +367,7 @@ export const WALLET_TRANSACTIONS: WalletTransaction[] = [
   },
 ];
 
-export const DELIVERY_ROUTES: import('@/types/merchant-extra').DeliveryRoute[] = [
+export const DELIVERY_ROUTES: DeliveryRoute[] = [
   {
     id: 'route-1',
     supplierId: 'sup-1',
@@ -443,7 +445,7 @@ export const DELIVERY_ROUTES: import('@/types/merchant-extra').DeliveryRoute[] =
   },
 ];
 
-export const PRICING_PRESETS: import('@/types/merchant-extra').PricingPreset[] = [
+export const PRICING_PRESETS: PricingPreset[] = [
   {
     id: 'pr-1',
     name: 'شيبسي عائلي 75 جم (كرتونة 24 كيس)',

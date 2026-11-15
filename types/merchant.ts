@@ -19,11 +19,12 @@ export interface SupplierProduct {
   unit: string;
   price: number;
   originalPrice?: number;
-  minOrder: number;
+  minOrder?: number;
   inStock: boolean;
   image?: string;
   sku?: string;
   description?: string;
+  supplierName?: string;
 }
 
 export interface Supplier {

@@ -16,6 +16,16 @@ export interface CommodityPrice {
   updatedAt: string;
 }
 
+export interface RestockItem {
+  productId: string;
+  productName: string;
+  supplierId: string;
+  supplierName: string;
+  unit: string;
+  price: number;
+  recommendedQty: number;
+}
+
 export interface RestockPreset {
   id: string;
   title: string;
@@ -23,15 +33,7 @@ export interface RestockPreset {
   estimatedTotal: number;
   itemsCount: number;
   badge: string;
-  items: {
-    productId: string;
-    productName: string;
-    supplierId: string;
-    supplierName: string;
-    unit: string;
-    price: number;
-    recommendedQty: number;
-  }[];
+  items: RestockItem[];
 }
 
 export interface CouponItem {
