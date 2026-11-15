@@ -193,78 +193,78 @@ export default function MarketPricesPage() {
           return (
             <div
               key={item.id}
-              className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs hover:border-slate-300 hover:shadow-md transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+              className="rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white p-3 sm:p-5 shadow-xs hover:border-slate-300 hover:shadow-md transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4"
             >
               {/* Product meta & price movement */}
-              <div className="space-y-2 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="rounded-md bg-slate-100 text-slate-700 px-2 py-0.5 text-[10px] font-bold">
+              <div className="space-y-1.5 sm:space-y-2 flex-1">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="rounded-md bg-slate-100 text-slate-700 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold">
                     {item.category}
                   </span>
 
-                  <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
+                  <span className="text-[9px] sm:text-[10px] text-slate-400 flex items-center gap-1">
+                    <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                     <span>تحديث: {item.updatedAt}</span>
                   </span>
 
                   {isDown && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[10px] font-black">
-                      <TrendingDown className="h-3.5 w-3.5" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[9px] sm:text-[10px] font-black">
+                      <TrendingDown className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       <span>انخفاض {Math.abs(item.changePercent)}% هذا الأسبوع</span>
                     </span>
                   )}
 
                   {isUp && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-800 px-2.5 py-0.5 text-[10px] font-black">
-                      <TrendingUp className="h-3.5 w-3.5" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-800 px-2 py-0.5 text-[9px] sm:text-[10px] font-black">
+                      <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       <span>ارتفاع {item.changePercent}%</span>
                     </span>
                   )}
 
                   {item.trend === 'stable' && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 px-2.5 py-0.5 text-[10px] font-bold">
-                      <Minus className="h-3.5 w-3.5" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold">
+                      <Minus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       <span>سعر مستقر</span>
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-baseline gap-3">
-                  <h3 className="text-sm sm:text-base font-bold text-gray-900">{item.name}</h3>
-                  <span className="text-xs text-slate-400">({item.unit})</span>
+                <div className="flex items-baseline gap-2 sm:gap-3">
+                  <h3 className="text-xs sm:text-base font-bold text-gray-900">{item.name}</h3>
+                  <span className="text-[10px] sm:text-xs text-slate-400">({item.unit})</span>
                 </div>
 
                 {/* Intelligent Advice for Supermarket Owner */}
-                <div className="rounded-xl bg-blue-50/60 border border-blue-100 p-2.5 text-[11px] text-slate-700 leading-relaxed">
+                <div className="rounded-xl bg-blue-50/60 border border-blue-100 p-2 sm:p-2.5 text-[10px] sm:text-[11px] text-slate-700 leading-relaxed">
                   <strong className="text-blue-900 font-bold ml-1">💡 نصيحة توريد لمحلك:</strong>
                   <span>{item.advice}</span>
                 </div>
               </div>
 
               {/* Price comparison & Quick Action */}
-              <div className="flex items-center justify-between lg:justify-end gap-5 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+              <div className="flex items-center justify-between lg:justify-end gap-3 sm:gap-5 pt-2.5 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                 <div className="text-right">
-                  <span className="text-[10px] text-slate-400 block">أرخص سعر مصنع متاح:</span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-base sm:text-xl font-black text-emerald-700 font-mono">
+                  <span className="text-[9px] sm:text-[10px] text-slate-400 block">أرخص سعر مصنع متاح:</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm sm:text-xl font-black text-emerald-700 font-mono">
                       {item.bestPrice} ج.م
                     </span>
                     {item.currentAvgPrice > item.bestPrice && (
-                      <span className="text-xs text-slate-400 line-through">
+                      <span className="text-[10px] sm:text-xs text-slate-400 line-through">
                         {item.currentAvgPrice} ج
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 font-semibold block mt-0.5">
                     المورد: {item.bestSupplierName}
                   </span>
                 </div>
 
                 <Link
                   href={`/merchant/suppliers/${item.bestSupplierId}`}
-                  className="flex items-center gap-1.5 rounded-xl bg-[#0f2d4a] hover:bg-blue-900 text-white px-4 py-2.5 text-xs font-bold shadow-xs transition-colors shrink-0"
+                  className="flex items-center gap-1 rounded-xl bg-[#0f2d4a] hover:bg-blue-900 text-white px-3 py-1.5 sm:px-4 sm:py-2.5 text-[10px] sm:text-xs font-bold shadow-xs transition-colors shrink-0"
                 >
-                  <ShoppingCart className="h-3.5 w-3.5" />
+                  <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   <span>شراء بأرخص سعر</span>
                 </Link>
               </div>

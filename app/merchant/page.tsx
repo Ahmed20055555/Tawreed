@@ -1,729 +1,546 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Building2,
-  Bell,
-  Flame,
+  ShoppingCart,
   Package,
-  Filter,
-  CheckCircle2,
-  Sparkles,
-  TrendingDown,
-  TrendingUp,
-  Megaphone,
-  Store,
-  Layers,
   Wallet,
   Zap,
-  ShieldCheck,
+  TrendingDown,
   Truck,
-  Award,
+  Flame,
+  ShieldCheck,
+  CheckCircle2,
+  ChevronLeft,
   ArrowRight,
-  ShoppingCart,
   Plus,
-  Clock,
-  MapPin,
   Check,
-  RotateCcw,
+  Ticket,
+  Copy,
+  Clock,
+  Sparkles,
 } from 'lucide-react';
 import { useMerchant } from '@/context/MerchantContext';
-import { StatCard } from '@/components/clearance/StatCard';
-import { UpdateCard } from '@/components/merchant/UpdateCard';
-import { EmptyState } from '@/components/common/EmptyState';
-import { SupplierProduct } from '@/types/merchant';
 
 export default function MerchantHomePage() {
-  const {
-    feed,
-    linkedSuppliers,
-    suppliers,
-    stats,
-    markAllRead,
-    addToCart,
-    profile,
-    showToast,
-  } = useMerchant();
+  const { profile, linkedSuppliers, cartCount, stats, orders, addToCart, showToast } = useMerchant();
 
-  const [selectedSupplierId, setSelectedSupplierId] = useState<string>('all');
-  const [selectedType, setSelectedType] = useState<string>('all');
-  const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
-  const [quickOrderAdded, setQuickOrderAdded] = useState(false);
+  const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
+  const [basketAdded, setBasketAdded] = useState(false);
+  const [copiedCoupon, setCopiedCoupon] = useState(false);
 
-  // Filter feed: Only show updates from linked suppliers
-  const linkedSupplierIds = useMemo(
-    () => new Set(linkedSuppliers.map((s) => s.id)),
-    [linkedSuppliers]
-  );
+  const latestOrder = orders.length > 0 ? orders[0] : null;
 
-  const filteredUpdates = useMemo(() => {
-    return feed.filter((item) => {
-      if (!linkedSupplierIds.has(item.supplierId)) return false;
-      if (selectedSupplierId !== 'all' && item.supplierId !== selectedSupplierId) return false;
-      if (selectedType !== 'all' && item.type !== selectedType) return false;
-      if (unreadOnly && item.isRead) return false;
-      return true;
-    });
-  }, [feed, linkedSupplierIds, selectedSupplierId, selectedType, unreadOnly]);
-
-  const typeTabs: { id: string; label: string; icon?: React.ElementType }[] = [
-    { id: 'all', label: 'الكل' },
-    { id: 'offer', label: 'عروض وخصومات', icon: Flame },
-    { id: 'new_product', label: 'منتجات جديدة', icon: Sparkles },
-    { id: 'price_change', label: 'تغيير أسعار', icon: TrendingDown },
-    { id: 'announcement', label: 'إعلانات', icon: Megaphone },
-  ];
-
-  // Hot Flash Deals (Curated high-margin deals for supermarkets)
-  const flashDeals = [
+  // 1. Core Fast-Selling Commodities for direct price comparison
+  const priceComparisonItems = [
     {
-      id: 'deal-1',
+      id: 'prod-101',
+      name: 'شيبسي عائلي بالجبنة (كرتونة 24 كيس)',
+      factoryPrice: 210,
+      marketPrice: 235,
+      saving: 25,
+      unit: 'كرتونة 24 كيس',
       supplierId: 'sup-1',
       supplierName: 'شركة الأهرام',
-      title: 'بونص كرتونة شيبسي هدية',
-      description: 'اطلب 5 كراتين شيبسي عائلي واحصل على كرتونة مجاناً فوراً',
-      discount: 'كرتونة مجاناً',
-      savingEstimate: '210 ج.م وفر مباشر',
-      endsIn: 'ينتهي بعد 18 ساعة',
-      price: 210,
-      unit: 'كرتونة 24 كيس',
-      productName: 'شيبسي عائلي بالجبنة المتبلة',
     },
     {
-      id: 'deal-2',
-      supplierId: 'sup-2',
-      supplierName: 'شركة النيل للألبان',
-      title: 'خصم كاش 12% على الجبنة الفيتا',
-      description: 'سعر ترويجي لمتاجر التجزئة لتنشيط مبيعات الفطور',
-      discount: 'خصم 12%',
-      savingEstimate: '80 ج.م وفر لكل كرتونة',
-      endsIn: 'ينتهي اليوم 10 مساءً',
-      price: 600,
-      oldPrice: 680,
-      unit: 'كرتونة 24 علبة',
-      productName: 'جبنة بيضاء فيتا تتراباك 500 جم',
-    },
-    {
-      id: 'deal-3',
-      supplierId: 'sup-3',
-      supplierName: 'البركة للمنظفات',
-      title: 'عرض مسحوق الغسيل الأوتوماتيك',
-      description: 'تخفيض سعر المصنع المباشر لكرتونة 4 أكياس سوبر لافندر',
-      discount: 'وفر 40 ج.م',
-      savingEstimate: 'هامش ربح إضافي 15%',
-      endsIn: 'باقي يومين',
-      price: 490,
-      oldPrice: 530,
-      unit: 'كرتونة 4 أكياس',
-      productName: 'مسحوق غسيل أوتوماتيك لافندر 2.5 كجم',
-    },
-  ];
-
-  // Top fast-selling items in the merchant's area
-  const trendingAreaProducts = [
-    {
-      id: 'trend-1',
-      name: 'شيبسي عائلي بالجبنة المتبلة',
-      category: 'مقرمشات وشيبسي',
-      price: 210,
-      unit: 'كرتونة 24 كيس',
-      supplierId: 'sup-1',
-      demandNote: 'طلبته 54 بقالة وسوبر ماركت في منطقتك هذا الأسبوع',
-      margin: 'هامش ربحك 30%',
-    },
-    {
-      id: 'trend-2',
-      name: 'حليب النيل كامل الدسم UHT (1 لتر)',
-      category: 'حليب وألبان',
-      price: 430,
-      unit: 'كرتونة 12 علبة',
-      supplierId: 'sup-2',
-      demandNote: 'أعلى معدل سحب يومي للمنازل في منطقتك',
-      margin: 'هامش ربحك 22%',
-    },
-    {
-      id: 'trend-3',
-      name: 'مكرونة الأهرام قلم فاخرة (400 جم)',
-      category: 'مكرونة ودقيق',
-      price: 240,
-      unit: 'كرتونة 20 كيس',
-      supplierId: 'sup-1',
-      demandNote: 'صنف أساسي سريع الدوران بالمحلات',
-      margin: 'هامش ربحك 25%',
-    },
-    {
-      id: 'trend-4',
-      name: 'سائل غسيل الأطباق بالليمون (1 لتر)',
-      category: 'منظفات مطبخ',
-      price: 260,
+      id: 'prod-501',
+      name: 'زيت ذرة ممتاز الشرق 800 مل (كرتونة 12 زجاجة)',
+      factoryPrice: 790,
+      marketPrice: 840,
+      saving: 50,
       unit: 'كرتونة 12 زجاجة',
-      supplierId: 'sup-3',
-      demandNote: 'طلبته 38 بقالة في الشيخ زايد هذا الشهر',
-      margin: 'هامش ربحك 28%',
+      supplierId: 'sup-5',
+      supplierName: 'مصانع الشرق',
+    },
+    {
+      id: 'prod-103',
+      name: 'أرز الأهرام عريض فاخر (بالتة 10 أكياس 1 كجم)',
+      factoryPrice: 310,
+      marketPrice: 335,
+      saving: 25,
+      unit: 'بالتة 10 أكياس',
+      supplierId: 'sup-1',
+      supplierName: 'شركة الأهرام',
     },
   ];
 
-  // Quick 1-Click Restock Basket handler
-  const handleQuickRestockAll = () => {
-    trendingAreaProducts.forEach((item) => {
-      const sup = suppliers.find((s) => s.id === item.supplierId);
-      if (sup) {
-        addToCart(
-          {
-            id: item.id,
-            supplierId: item.supplierId,
-            name: item.name,
-            category: item.category,
-            unit: item.unit,
-            price: item.price,
-            minOrder: 1,
-            inStock: true,
-          },
-          sup,
-          1
-        );
-      }
-    });
-    setQuickOrderAdded(true);
-    showToast('تمت إضافة كرتونة من كل صنف أساسي إلى سلتك بنجاح! 🛒');
-    setTimeout(() => setQuickOrderAdded(false), 4000);
+  // Quick 4 navigation services
+  const quickServices = [
+    {
+      title: 'النواقص السريعة',
+      desc: 'باقات البقالة والألبان الأكثر سحباً، تنزل في سلتك بنقرة واحدة.',
+      href: '/merchant/smart-restock',
+      icon: Zap,
+      iconColor: 'text-amber-500',
+      bgColor: 'bg-amber-50',
+      badge: 'وفّر وقتك',
+    },
+    {
+      title: 'بورصة الأسعار',
+      desc: 'مؤشر أسعار الزيت والسكر والأرز يومياً، وأرخص سعر مصنع.',
+      href: '/merchant/market-prices',
+      icon: TrendingDown,
+      iconColor: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      badge: 'مؤشر حي',
+    },
+    {
+      title: 'العروض والخصومات',
+      desc: 'صفقات البونص والكرتونة الهدية وخصومات المصانع المباشرة.',
+      href: '/merchant/offers',
+      icon: Flame,
+      iconColor: 'text-rose-500',
+      bgColor: 'bg-rose-50',
+      badge: 'تخفيضات',
+    },
+    {
+      title: 'الشركات والمصانع',
+      desc: 'تصفح كتالوجات كبرى مصانع الأغذية واربط معهم للشراء بالجملة.',
+      href: '/merchant/suppliers',
+      icon: Building2,
+      iconColor: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+      badge: 'دليل الجملة',
+    },
+  ];
+
+  // Add individual item to cart
+  const handleAddItem = (item: (typeof priceComparisonItems)[0]) => {
+    addToCart(
+      {
+        id: item.id,
+        supplierId: item.supplierId,
+        name: item.name,
+        category: 'بقالة أساسية',
+        unit: item.unit,
+        price: item.factoryPrice,
+        minOrder: 1,
+        inStock: true,
+      },
+      { id: item.supplierId, name: item.supplierName } as any,
+      1
+    );
+
+    setAddedItems((prev) => ({ ...prev, [item.id]: true }));
+    setTimeout(() => {
+      setAddedItems((prev) => ({ ...prev, [item.id]: false }));
+    }, 2500);
   };
 
-  const handleAddSingleDeal = (deal: (typeof flashDeals)[0]) => {
-    const sup = suppliers.find((s) => s.id === deal.supplierId);
-    if (sup) {
+  // Add the 3-carton restock basket all at once
+  const handleAddQuickBasket = () => {
+    priceComparisonItems.forEach((item) => {
       addToCart(
         {
-          id: deal.id,
-          supplierId: deal.supplierId,
-          name: deal.productName,
-          category: 'عروض حصرية',
-          unit: deal.unit,
-          price: deal.price,
+          id: item.id,
+          supplierId: item.supplierId,
+          name: item.name,
+          category: 'بقالة أساسية',
+          unit: item.unit,
+          price: item.factoryPrice,
           minOrder: 1,
           inStock: true,
         },
-        sup,
+        { id: item.supplierId, name: item.supplierName } as any,
         1
       );
-    }
+    });
+
+    setBasketAdded(true);
+    showToast('تمت إضافة الـ 3 أصناف إلى سلتك ووفرت 100 ج.م فوري! 🛒');
+    setTimeout(() => setBasketAdded(false), 3000);
+  };
+
+  const handleCopyCoupon = () => {
+    navigator.clipboard?.writeText('TAWREED100');
+    setCopiedCoupon(true);
+    showToast('تم نسخ كود الخصم TAWREED100 بنجاح!');
+    setTimeout(() => setCopiedCoupon(false), 2500);
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* ========================================================
-          1. HERO SAVINGS & BUYING POWER BANNER
-          يقنع التاجر فوراً بحجم الوفر المالي وهامش ربحه
-         ======================================================== */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f2d4a] via-[#143a5e] to-[#0a1e32] p-5 sm:p-7 text-white shadow-lg border border-[#1e4870]">
-        {/* Decorative background glow */}
-        <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          {/* Main Value Proposition */}
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-[11px] font-bold text-emerald-300 border border-white/15">
-              <Zap className="h-3.5 w-3.5 fill-emerald-400 text-emerald-400" />
-              <span>وفرك المالي هذا الشهر مع توريد</span>
-              <span className="text-white/60">•</span>
-              <span>سعر المصنع بدون وسطاء</span>
+    <div className="space-y-4 sm:space-y-6 pb-12">
+      {/* 1. Four Clean Summary Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        {/* Linked Suppliers */}
+        <Link
+          href="/merchant/my-suppliers"
+          className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-2xs hover:shadow-sm hover:border-blue-300 transition-all block"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-500">شركات مربوطة</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+              <Building2 className="w-4 h-4" />
             </div>
+          </div>
+          <div className="text-lg sm:text-2xl font-black text-slate-900 mt-1">
+            {linkedSuppliers.length}{' '}
+            <span className="text-[10px] sm:text-xs font-normal text-slate-400">شركات</span>
+          </div>
+          <span className="text-[10px] text-blue-700 font-semibold mt-1 flex items-center gap-0.5">
+            <span>عرض شركاتي</span>
+            <ChevronLeft className="w-3 h-3" />
+          </span>
+        </Link>
 
-            <div className="space-y-1">
-              <h1 className="text-xl sm:text-3xl font-black tracking-tight leading-tight">
-                وفرت حوالي <span className="text-emerald-400 underline decoration-emerald-500/40 font-mono">4,850 ج.م</span> في طلبياتك هذا الشهر!
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                مرحباً يا <strong className="text-white">{profile.ownerName || 'ريس'}</strong> ({profile.storeName})! الشراء المباشر من مصانع وشركات توريد يوفر عليك متوسط <strong className="text-emerald-300">14% إلى 22%</strong> مقارنة بأسعار سيارات الجملة والوسطاء في السوق.
+        {/* Cart items */}
+        <Link
+          href="/merchant/cart"
+          className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-2xs hover:shadow-sm hover:border-emerald-300 transition-all block"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-500">سلة الطلب</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <ShoppingCart className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-lg sm:text-2xl font-black text-slate-900 mt-1">
+            {cartCount}{' '}
+            <span className="text-[10px] sm:text-xs font-normal text-slate-400">أصناف</span>
+          </div>
+          <span className="text-[10px] text-emerald-700 font-semibold mt-1 flex items-center gap-0.5">
+            <span>مراجعة السلة</span>
+            <ChevronLeft className="w-3 h-3" />
+          </span>
+        </Link>
+
+        {/* Pending Orders */}
+        <Link
+          href="/merchant/orders"
+          className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-2xs hover:shadow-sm hover:border-amber-300 transition-all block"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-500">طلبيات جارية</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+              <Package className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-lg sm:text-2xl font-black text-slate-900 mt-1">
+            {stats.pendingOrdersCount}{' '}
+            <span className="text-[10px] sm:text-xs font-normal text-slate-400">طلبية</span>
+          </div>
+          <span className="text-[10px] text-amber-800 font-semibold mt-1 flex items-center gap-0.5">
+            <span>متابعة الشحن</span>
+            <ChevronLeft className="w-3 h-3" />
+          </span>
+        </Link>
+
+        {/* Cashback Balance */}
+        <Link
+          href="/merchant/rewards"
+          className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-2xs hover:shadow-sm hover:border-purple-300 transition-all block"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-500">رصيد الكاش باك</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
+              <Wallet className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-lg sm:text-2xl font-black text-slate-900 mt-1">
+            1,480{' '}
+            <span className="text-[10px] sm:text-xs font-normal text-slate-400">ج.م</span>
+          </div>
+          <span className="text-[10px] text-purple-700 font-semibold mt-1 flex items-center gap-0.5">
+            <span>فتح المحفظة</span>
+            <ChevronLeft className="w-3 h-3" />
+          </span>
+        </Link>
+      </div>
+
+      {/* 2. REAL SAVINGS SECTION: شوف وفرك الحقيقي في الكرتونة */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xs p-4 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                💰
+              </span>
+              <h2 className="text-sm sm:text-base font-black text-slate-900">
+                وفرك المباشر في الكرتونة مقارنة بسوق الجملة
+              </h2>
+            </div>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+              أسعار المصانع المباشرة على توريد مقارنة بأسعار سيارات الجملة العادية
+            </p>
+          </div>
+
+          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 self-start sm:self-auto">
+            متوسط توفيرك: 15% إلى 20%
+          </span>
+        </div>
+
+        {/* 3 Price comparison items */}
+        <div className="space-y-2.5">
+          {priceComparisonItems.map((item) => {
+            const isAdded = !!addedItems[item.id];
+
+            return (
+              <div
+                key={item.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/80 border border-slate-100 hover:border-slate-200 transition-colors"
+              >
+                <div className="min-w-0">
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                    {item.name}
+                  </h3>
+                  <div className="text-[10px] sm:text-xs text-slate-400 mt-0.5">
+                    {item.supplierName} • {item.unit}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60">
+                  {/* Prices comparison */}
+                  <div className="text-right">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-sm sm:text-base font-black text-emerald-700 font-mono">
+                        {item.factoryPrice} ج.م
+                      </span>
+                      <span className="text-xs text-slate-400 line-through">
+                        {item.marketPrice} ج
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-600 block">
+                      وفر {item.saving} ج.م في الكرتونة
+                    </span>
+                  </div>
+
+                  {/* Add button */}
+                  <button
+                    type="button"
+                    onClick={() => handleAddItem(item)}
+                    className={`flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer ${
+                      isAdded
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-[#0f2d4a] hover:bg-blue-900 text-white'
+                    }`}
+                  >
+                    {isAdded ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>تمت الإضافة</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>أضف كرتونة</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 1-Click Fast Restock Basket CTA */}
+        <div className="pt-2">
+          <div className="bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent rounded-2xl p-4 border border-emerald-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+              <div className="text-xs sm:text-sm font-black text-emerald-950 flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-emerald-600 fill-emerald-600" />
+                <span>طلبية النواقص السريعة لمحلك (شيبسي + زيت + أرز)</span>
+              </div>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                إجمالي الـ 3 أصناف معاً: <strong className="text-slate-900">1,310 ج.م فقط</strong> (بتوفر 100 ج.م دفعة واحدة)
               </p>
             </div>
 
-            {/* Quick Micro-Trust badges */}
-            <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-300 font-semibold">
-              <span className="flex items-center gap-1.5">
-                <Truck className="h-4 w-4 text-emerald-400" />
-                <span>توصيل مجاني لباب المحل</span>
-              </span>
-              <span className="text-white/30">•</span>
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                <span>استبدال فوري للتالف</span>
-              </span>
-              <span className="text-white/30">•</span>
-              <span className="flex items-center gap-1.5">
-                <Wallet className="h-4 w-4 text-emerald-400" />
-                <span>الدفع بعد المعاينة والفاتورة</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Quick Action Widget / Gold Tier Badge */}
-          <div className="shrink-0 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-4 sm:p-5 flex flex-col justify-between space-y-3 min-w-[240px]">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                  <Award className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-300 block">رتبة متجرك</span>
-                  <span className="text-xs font-bold text-amber-300">تاجر ذهبي معتمد</span>
-                </div>
-              </div>
-              <span className="rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 px-2 py-0.5 text-[10px] font-bold">
-                نشط ✓
-              </span>
-            </div>
-
-            <div className="space-y-1.5 text-[11px]">
-              <div className="flex justify-between text-slate-300">
-                <span>خصم إضافي قادم:</span>
-                <span className="font-bold text-emerald-300">2% كاش باك</span>
-              </div>
-              <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-amber-400 to-emerald-400 w-3/4 rounded-full" />
-              </div>
-              <span className="text-[10px] text-slate-400 block text-right">
-                اطلب بـ 1,820 ج.م إضافية لتحصل على هدية بونص مجانية
-              </span>
-            </div>
-
-            <Link
-              href="/merchant/suppliers"
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-2.5 px-3 text-xs shadow-md transition-all text-center"
+            <button
+              type="button"
+              onClick={handleAddQuickBasket}
+              className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                basketAdded
+                  ? 'bg-emerald-700 text-white'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
             >
-              <span>تصفح كبرى المصانع والشركات</span>
-              <ArrowRight className="h-3.5 w-3.5 rotate-180" />
-            </Link>
+              {basketAdded ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>تمت إضافة الـ 3 كراتين للسلة!</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="w-4 h-4" />
+                  <span>أضف الـ 3 كراتين دفعة واحدة للسلة</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ========================================================
-          2. 4 STAT CARDS
-         ======================================================== */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <StatCard
-          title="شركات مربوطة"
-          value={`${stats.linkedSuppliersCount} شركة`}
-          subtitle="تستقبل أسعارها الحية"
-          icon={Building2}
-          colorScheme="blue"
-        />
+      {/* 3. WELCOME VOUCHER: كوبون 100 ج.م فوري */}
+      <div className="bg-gradient-to-br from-amber-50 to-orange-50/60 rounded-2xl sm:rounded-3xl border border-dashed border-amber-300 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Ticket className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-black text-amber-950">
+                كوبون خصم 100 ج.م فوري لمحلك 🎁
+              </h3>
+              <span className="text-[10px] font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md">
+                عرض نشط
+              </span>
+            </div>
+            <p className="text-xs text-amber-800 mt-0.5">
+              ينزل خصم فوري من إجمالي فاتورة مشترياتك القادمة عند تجاوز 2,500 ج.م
+            </p>
+          </div>
+        </div>
 
-        <StatCard
-          title="تحديثات وعروض"
-          value={`${stats.unreadUpdatesCount} جديد`}
-          subtitle="تخفيضات لم تقرأها بعد"
-          icon={Bell}
-          colorScheme="purple"
-          badge={stats.unreadUpdatesCount > 0 ? 'تنبيه مهم' : undefined}
-        />
-
-        <StatCard
-          title="عروض وبونص متاح"
-          value={`${stats.activeOffersCount} صفقات`}
-          subtitle="كرتونة هدية وخصومات"
-          icon={Flame}
-          colorScheme="amber"
-        />
-
-        <StatCard
-          title="طلبيات جارية"
-          value={`${stats.pendingOrdersCount} طلبيات`}
-          subtitle="سيارات التوزيع في الطريق"
-          icon={Package}
-          colorScheme="emerald"
-        />
+        <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
+          <span className="font-mono font-black text-sm bg-white px-3 py-1.5 rounded-xl border border-amber-200 text-[#0f2d4a]">
+            TAWREED100
+          </span>
+          <button
+            type="button"
+            onClick={handleCopyCoupon}
+            className="bg-[#0f2d4a] hover:bg-blue-900 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            {copiedCoupon ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>تم النسخ</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                <span>نسخ الكود</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* ========================================================
-          3. FLASH DEALS & BONUSES CAROUSEL / GRID
-          صفقات حارقة تشجع التاجر يطلب فوراً
-         ======================================================== */}
-      <div className="rounded-2xl border border-amber-200/90 bg-gradient-to-b from-amber-50/50 to-white p-4 sm:p-5 shadow-xs space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
-              <Flame className="h-4 w-4" />
+      {/* 4. FOUR EASY SERVICES */}
+      <div className="space-y-3">
+        <h2 className="text-xs sm:text-sm font-black text-slate-800">
+          خدمات السوبر ماركت الأساسية
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          {quickServices.map((srv) => {
+            const Icon = srv.icon;
+            return (
+              <Link
+                key={srv.title}
+                href={srv.href}
+                className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all flex items-start gap-3 group"
+              >
+                <div
+                  className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${srv.bgColor} ${srv.iconColor} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}
+                >
+                  <Icon className="w-5 h-5" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                      {srv.title}
+                    </h3>
+                    <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                      {srv.badge}
+                    </span>
+                  </div>
+
+                  <p className="text-[10px] sm:text-xs text-slate-500 mt-1 leading-snug">
+                    {srv.desc}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 5. FOUR STORE OWNER GUARANTEES: ليه تطلب من توريد وأنت مطمن؟ */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-start gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+            <Truck className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-900">توصيل لباب المحل</h4>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+              عربية المصنع بتفرغ بضاعتك جوة المحل مجاناً لطلبات الجملة
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-start gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-900">معاينة قبل الدفع</h4>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+              افحص تواريخ الصلاحية والكراتين كاملة قبل ما تسدد الفاتورة
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-start gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+            <Wallet className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-900">الدفع كاش للمندوب</h4>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+              مش محتاج تدفع أونلاين — سلم الفلوس كاش عند وصول البضاعة
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-start gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-900">استبدال فوري للتالف</h4>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+              أي صنف فيه مشكلة بيستبدل في الحال في الفاتورة الرسمية
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. Active Order Snippet (If exists) */}
+      {latestOrder && (
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <Truck className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-black text-gray-900">
-                صفقات اليوم وبونص المصانع الفوري 🔥
-              </h2>
-              <p className="text-[11px] sm:text-xs text-amber-800">
-                عروض أسعار خاصة للمتاجر المربوطة فقط بهامش ربح مضاعف لمحلك
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-900">
+                  آخر طلبية قيد التوصيل: {latestOrder.orderNumber}
+                </span>
+                <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  في الطريق
+                </span>
+              </div>
+              <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">
+                المورد: {latestOrder.supplierName} • الإجمالي: {latestOrder.total.toLocaleString()} ج.م • التسليم المتوقع: غداً صباحاً
               </p>
             </div>
           </div>
 
           <Link
-            href="/merchant/clearance"
-            className="text-xs font-bold text-amber-800 hover:text-amber-950 flex items-center gap-1 self-start sm:self-auto"
+            href="/merchant/orders"
+            className="text-xs font-bold text-[#0f2d4a] hover:text-blue-700 flex items-center gap-1 self-start sm:self-auto bg-slate-100 px-3 py-1.5 rounded-xl"
           >
-            <span>سوق التصفية والخصومات الكبرى</span>
-            <ArrowRight className="h-3 w-3 rotate-180" />
+            <span>تفاصيل الطلب</span>
+            <ChevronLeft className="w-3.5 h-3.5" />
           </Link>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {flashDeals.map((deal) => (
-            <div
-              key={deal.id}
-              className="flex flex-col justify-between rounded-xl border border-amber-200 bg-white p-3.5 shadow-xs hover:border-amber-300 hover:shadow-md transition-all"
-            >
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="rounded-md bg-amber-100 text-amber-900 font-bold text-[10px] px-2 py-0.5">
-                    {deal.discount}
-                  </span>
-                  <span className="text-[10px] text-amber-700 font-medium flex items-center gap-1">
-                    <Clock className="h-3 w-3 text-amber-500" />
-                    <span>{deal.endsIn}</span>
-                  </span>
-                </div>
-
-                <h3 className="text-xs sm:text-sm font-bold text-gray-900 leading-snug">
-                  {deal.productName}
-                </h3>
-
-                <p className="text-[11px] text-slate-500 line-clamp-2">
-                  {deal.description}
-                </p>
-
-                <div className="flex items-center justify-between pt-1 text-xs">
-                  <div>
-                    <span className="text-sm font-black text-gray-900">{deal.price} ج.م</span>
-                    {deal.oldPrice && (
-                      <span className="text-[11px] text-slate-400 line-through mr-1">
-                        {deal.oldPrice} ج
-                      </span>
-                    )}
-                    <span className="text-[10px] text-slate-400 block">{deal.unit}</span>
-                  </div>
-
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                    {deal.savingEstimate}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
-                <span className="text-[10px] font-bold text-slate-500">{deal.supplierName}</span>
-                <button
-                  type="button"
-                  onClick={() => handleAddSingleDeal(deal)}
-                  className="flex items-center gap-1 rounded-lg bg-[#0f2d4a] hover:bg-blue-900 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                >
-                  <ShoppingCart className="h-3 w-3" />
-                  <span>أضف للسلة</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ========================================================
-          4. 1-CLICK QUICK RESTOCK BASKET & AREA TRENDS
-          "طلبية النواقص بضغطة واحدة" - إبداع حقيقي يسهل عمل التاجر
-         ======================================================== */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-6 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800">
-                <MapPin className="h-4 w-4" />
-              </span>
-              <h2 className="text-sm sm:text-base font-black text-gray-900">
-                المنتجات الأكثر طلباً وسحباً في منطقتك ({profile.area || 'الإسماعيلية'}) 📈
-              </h2>
-            </div>
-            <p className="text-[11px] sm:text-xs text-slate-500 mt-1">
-              هذه الأصناف سريعة الدوران ومطلوبة يومياً في المتاجر المجاورة لك بمحافظتك
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleQuickRestockAll}
-            className={`flex items-center justify-center gap-2 rounded-xl py-2 px-4 text-xs font-black shadow-xs transition-all cursor-pointer self-start sm:self-auto ${
-              quickOrderAdded
-                ? 'bg-emerald-600 text-white'
-                : 'bg-[#0f2d4a] hover:bg-blue-900 text-white'
-            }`}
-          >
-            {quickOrderAdded ? (
-              <>
-                <Check className="h-4 w-4" />
-                <span>تمت الإضافة للسلة!</span>
-              </>
-            ) : (
-              <>
-                <Zap className="h-4 w-4 fill-amber-300 text-amber-300" />
-                <span>طلب النواقص كلها بنقرة واحدة (4 كراتين)</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {trendingAreaProducts.map((prod) => (
-            <div
-              key={prod.id}
-              className="flex flex-col justify-between rounded-xl border border-slate-100 bg-slate-50/70 p-3 hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-1 mb-1">
-                  <span className="text-[9px] font-bold text-slate-500 bg-white border border-slate-200 px-1.5 py-0.2 rounded">
-                    {prod.category}
-                  </span>
-                  <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
-                    {prod.margin}
-                  </span>
-                </div>
-
-                <h3 className="text-xs font-bold text-gray-900 leading-snug line-clamp-1">
-                  {prod.name}
-                </h3>
-
-                <p className="text-[10px] text-slate-400 mt-0.5">{prod.unit}</p>
-
-                <p className="text-[10px] text-blue-700 font-semibold mt-1.5 bg-blue-50/60 p-1 rounded-md">
-                  📍 {prod.demandNote}
-                </p>
-              </div>
-
-              <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between">
-                <span className="text-xs font-black text-gray-900 font-mono">
-                  {prod.price} ج.م
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const sup = suppliers.find((s) => s.id === prod.supplierId);
-                    if (sup) {
-                      addToCart(
-                        {
-                          id: prod.id,
-                          supplierId: prod.supplierId,
-                          name: prod.name,
-                          category: prod.category,
-                          unit: prod.unit,
-                          price: prod.price,
-                          minOrder: 1,
-                          inStock: true,
-                        },
-                        sup,
-                        1
-                      );
-                    }
-                  }}
-                  className="flex items-center gap-1 rounded-lg bg-white border border-slate-200 hover:border-[#0f2d4a] hover:bg-[#0f2d4a] hover:text-white text-slate-700 px-2 py-1 text-[11px] font-bold shadow-2xs transition-colors cursor-pointer"
-                >
-                  <Plus className="h-3 w-3" />
-                  <span>كرتونة</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ========================================================
-          5. WHY TAWREED? (TRUST & GUARANTEES FOR SUPERMARKET)
-          كروت إقناع عملية لصاحب المحل
-         ======================================================== */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-            <Truck className="h-5 w-5" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-gray-900">توصيل لباب المحل</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
-              سيارات توزيع معتمدة تنزل بضاعتك داخل المحل مجاناً لطلبيات الجملة
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-gray-900">فاتورة رسمية واستبدال</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
-              فاتورة ضريبية معتمدة مع حق استبدال أي كرتونة تالفة فوراً دون نزاع
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
-            <Wallet className="h-5 w-5" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-gray-900">الدفع عند الاستلام</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
-              عاين الكراتين وتواريخ الصلاحية أولاً ثم ادفع كاش للمندوب بأمان
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-700">
-            <Award className="h-5 w-5" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-gray-900">أسعار مصانع حقيقية</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
-              بدون وسيط أو تاجر جملة يرفع السعر — هامش ربح كامل لمحلك
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================
-          6. FEED OF LIVE UPDATES FROM LINKED SUPPLIERS
-         ======================================================== */}
-      <div className="space-y-3.5 pt-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-black text-gray-900">
-                منشورات وتحديثات الشركات المربوطة معك
-              </h2>
-              {stats.unreadUpdatesCount > 0 && (
-                <span className="rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5">
-                  {stats.unreadUpdatesCount} جديد
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-              كل جديد تنزله المصانع يصل لحسابك فوراً لتكون أول من يستفيد من العروض
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {stats.unreadUpdatesCount > 0 && (
-              <button
-                type="button"
-                onClick={markAllRead}
-                className="text-xs font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1 cursor-pointer"
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>تحديد الكل كمقروء</span>
-              </button>
-            )}
-
-            <Link
-              href="/merchant/suppliers"
-              className="text-xs font-bold text-[#0f2d4a] hover:text-blue-700 flex items-center gap-1"
-            >
-              <span>ربط المزيد من الشركات</span>
-              <ArrowRight className="h-3 w-3 rotate-180" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Filters Bar */}
-        {linkedSuppliers.length > 0 && (
-          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 shadow-xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              {/* Type Filter Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-                {typeTabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const active = selectedType === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setSelectedType(tab.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                        active
-                          ? 'bg-[#0f2d4a] text-white shadow-xs'
-                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/60'
-                      }`}
-                    >
-                      {Icon && <Icon className="h-3 w-3" />}
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Supplier Filter & Unread Toggle */}
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedSupplierId}
-                  onChange={(e) => setSelectedSupplierId(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-gray-800 cursor-pointer focus:border-[#0f2d4a] focus:outline-none"
-                >
-                  <option value="all">كل الشركات المربوطة</option>
-                  {linkedSuppliers.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  type="button"
-                  onClick={() => setUnreadOnly(!unreadOnly)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-                    unreadOnly
-                      ? 'bg-blue-50 border-blue-300 text-blue-800'
-                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <span
-                    className={`h-2 w-2 rounded-full ${
-                      unreadOnly ? 'bg-blue-600' : 'bg-slate-300'
-                    }`}
-                  />
-                  <span>غير المقروء فقط</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Feed List or Empty State */}
-        {linkedSuppliers.length === 0 ? (
-          <EmptyState
-            icon={Building2}
-            title="لم تقم بالربط مع أي شركة بعد"
-            description="اربط مع المصانع والشركات التي تشتري منها بضاعة محلك لتصلك عروضهم وتخفيضاتهم وأسعارهم الحية هنا في شاشتك الرئيسية."
-            actionText="تصفح دليل الشركات للربط"
-            onAction={() => {
-              window.location.href = '/merchant/suppliers';
-            }}
-            badge="ابدأ التوفير الآن"
-          />
-        ) : filteredUpdates.length === 0 ? (
-          <EmptyState
-            icon={Bell}
-            title="لا توجد تحديثات مطابقة للفلاتر الحالية"
-            description="جرب إزالة فلتر غير المقروء أو اختيار شركة أخرى لرؤية التحديثات والمنشورات السابقة."
-            actionText="إعادة ضبط الفلاتر"
-            onAction={() => {
-              setSelectedSupplierId('all');
-              setSelectedType('all');
-              setUnreadOnly(false);
-            }}
-          />
-        ) : (
-          <div className="space-y-3.5">
-            {filteredUpdates.map((update) => (
-              <UpdateCard key={update.id} update={update} />
-            ))}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

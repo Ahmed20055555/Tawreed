@@ -18,6 +18,8 @@ import {
   TrendingDown,
   Zap,
   Award,
+  Calculator,
+  Truck,
 } from 'lucide-react';
 import { useMerchant } from '@/context/MerchantContext';
 
@@ -55,6 +57,14 @@ export function SidebarNav({ isOpen, onClose, isMobileDrawer = false }: SidebarN
       exact: true,
       badge: 'وفّر وقت',
       badgeColor: 'bg-amber-100 text-amber-800',
+    },
+    {
+      label: 'العروض والصفقات',
+      href: '/merchant/offers',
+      icon: Flame,
+      exact: true,
+      badge: 'بونص',
+      badgeColor: 'bg-rose-100 text-rose-700',
     },
     {
       label: 'سوق التصفية',

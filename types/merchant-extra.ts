@@ -53,3 +53,31 @@ export interface WalletTransaction {
   description: string;
   date: string;
 }
+
+export interface DeliveryRoute {
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  supplierLogo?: string;
+  days: string[]; // e.g. ['الأحد', 'الثلاثاء', 'الخميس']
+  cutoffTime: string; // e.g. '08:00 م'
+  nextDeliveryDate: string; // e.g. 'غداً صباحاً (الأحد)'
+  driverName?: string;
+  driverPhone?: string;
+  area: string;
+  minOrder: number;
+  deliveryFee: number; // 0 for free
+  status: 'active' | 'departed' | 'scheduled';
+}
+
+export interface PricingPreset {
+  id: string;
+  name: string;
+  category: string;
+  cartonPrice: number;
+  unitsPerCarton: number;
+  unitName: string; // e.g. 'كيس', 'علبة', 'زجاجة'
+  defaultMarginPercent: number; // e.g. 20
+  marketConsumerPrice: number;
+}
+
